@@ -1,19 +1,22 @@
-import paramiko
-from flask import Flask, request, jsonify
-import yaml
-from datetime import datetime
 import os
+from datetime import datetime
+
+import paramiko
+import yaml
 from dotenv import load_dotenv
+from flask import Flask, jsonify, request
 
 load_dotenv()
 
 app = Flask(__name__)
 
+
 def check_parameters(parameters):
     def recursive_check(obj, parent_key=""):
         if isinstance(obj, dict):
             for key, value in obj.items():
-                recursive_check(value, f"{parent_key}.{key}" if parent_key else key)
+                recursive_check(
+                    value, f"{parent_key}.{key}" if parent_key else key)
         else:
             if obj is None:
                 raise ValueError(f"should provide parameter {parent_key}")
@@ -22,6 +25,7 @@ def check_parameters(parameters):
         recursive_check(parameters)
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
+
 
 def current_time():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -68,7 +72,7 @@ def save_query():
     with open(full_filename, 'w') as f:
         yaml.dump(config_data, f)
 
-    stderr = execute_spark_job(full_filename) 
+    stderr = execute_spark_job(full_filename)
 
     return jsonify({'spark_stderr': stderr})
 
@@ -81,7 +85,7 @@ def execute_spark_job(full_filename):
     spark_home = os.getenv("SPARK_HOME")
     spark_pipeline_dir = os.getenv("SPARK_PIPELINE_DIR")
     jars = os.getenv("JARS")
-    
+
     python_file = os.getenv("PYTHON_FILE")
     if not python_file.endswith(".py"):
         python_file += ".py"
@@ -91,7 +95,7 @@ def execute_spark_job(full_filename):
 
     try:
         client.connect(hostname, username=username, password=password)
-        
+
         print(f"[{current_time()}] Uploading {full_filename}...")
         sftp = client.open_sftp()
         sftp.put(f"{full_filename}", f"{spark_pipeline_dir}/{full_filename}")
@@ -111,7 +115,7 @@ def execute_spark_job(full_filename):
             {python_file} -f {full_filename}"
 
         stdin, stdout, stderr = client.exec_command(command)
-        
+
         output = stdout.read().decode()
         stderr_output = stderr.read().decode()
 
@@ -121,6 +125,7 @@ def execute_spark_job(full_filename):
         return stderr_output
     finally:
         client.close()
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
