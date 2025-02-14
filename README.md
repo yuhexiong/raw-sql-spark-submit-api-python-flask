@@ -1,5 +1,7 @@
 # Raw SQL Spark Submit API
 
+**(also provided Traditional Chinese version document [README-CH.md](README-CH.md).)**
+
 Provides an API to submit Raw SQL Data Pipeline to the Hadoop Resource Manager backend service.
 
 ## Overview
